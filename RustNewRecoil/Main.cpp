@@ -8,7 +8,8 @@
 #include <Windows.h>
 #include <random>
 #include <thread>
-#include <vector>
+
+
 struct Vector1
 {
 	double x;
@@ -278,9 +279,9 @@ int main()
 {
 	SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
 	CreateThread(0, 0, (LPTHREAD_START_ROUTINE)MainFunc, 0, 0, 0);
-	WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T(("Main")), NULL };
+	WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, L"Main", NULL };
 	::RegisterClassEx(&wc);
-	HWND hwnd = ::CreateWindow(wc.lpszClassName, _T(("Main")), WS_OVERLAPPEDWINDOW, 0, 0, 50, 50, NULL, NULL, wc.hInstance, NULL);
+	HWND hwnd = ::CreateWindow(wc.lpszClassName, L"Main", WS_OVERLAPPEDWINDOW, 0, 0, 50, 50, NULL, NULL, wc.hInstance, NULL);
 	::ShowWindow(::GetConsoleWindow(), SW_HIDE);
 	if (!CreateDeviceD3D(hwnd))
 	{
