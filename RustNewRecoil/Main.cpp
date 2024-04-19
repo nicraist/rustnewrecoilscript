@@ -275,194 +275,189 @@ void CleanupDeviceD3D();
 void ResetDevice();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-int main()
-{
-	SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
-	CreateThread(0, 0, (LPTHREAD_START_ROUTINE)MainFunc, 0, 0, 0);
-	WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, L"Main", NULL };
-	::RegisterClassEx(&wc);
-	HWND hwnd = ::CreateWindow(wc.lpszClassName, L"Main", WS_OVERLAPPEDWINDOW, 0, 0, 50, 50, NULL, NULL, wc.hInstance, NULL);
-	::ShowWindow(::GetConsoleWindow(), SW_HIDE);
-	if (!CreateDeviceD3D(hwnd))
-	{
-		CleanupDeviceD3D();
-		::UnregisterClass(wc.lpszClassName, wc.hInstance);
-		return 1;
-	}
-	::ShowWindow(hwnd, SW_HIDE);
-	::UpdateWindow(hwnd);
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-	ImGui::StyleColorsDark();
-	ImGui_ImplWin32_Init(hwnd);
-	ImGui_ImplDX9_Init(g_pd3dDevice);
-	bool done = false;
-	while (!done)
-	{
-		MSG msg;
-		while (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE))
-		{
-			::TranslateMessage(&msg);
-			::DispatchMessage(&msg);
-			if (msg.message == WM_QUIT)
-				done = true;
-		}
-		if (done)
-			break;
-		ImGui_ImplDX9_NewFrame();
-		ImGui_ImplWin32_NewFrame();
-		ImGui::NewFrame();
-		{
-			ImGui::Begin(("Main"));
-			{
-				ImGui::BeginGroup();
-				ImGui::Text(("Sensitivity"));
-				ImGui::SliderFloat(("##Sensitivity"), &Sensitivity, 0.001, 1, ("%.2f"));
-				ImGui::Text(("FOV"));
-				ImGui::SliderInt(("##FOV"), &FOV, 65, 90);
-				ImGui::EndGroup();
-				ImGui::BeginGroup();
-				if (ImGui::Button((" AK"), ImVec2(100, 20))) {
-					WPAK = true; WPLR = false; WPMP5 = false; WPSMG = false; WPTHOMP = false; wptext = ("ak");
-				}
-				if (ImGui::Button((" LR"), ImVec2(100, 20))) {
-					WPAK = false; WPLR = true; WPMP5 = false; WPSMG = false; WPTHOMP = false; wptext = ("lr");
-				}
-				if (ImGui::Button((" MP5"), ImVec2(100, 20))) {
-					WPAK = false; WPLR = false; WPMP5 = true; WPSMG = false; WPTHOMP = false; wptext = ("mp5");
-				}
-				if (ImGui::Button((" SMG"), ImVec2(100, 20))) {
-					WPAK = false; WPLR = false; WPMP5 = false; WPSMG = true; WPTHOMP = false; wptext = ("smg");
-				}
-				if (ImGui::Button((" THOMP"), ImVec2(100, 20))) {
-					WPAK = false; WPLR = false; WPMP5 = false; WPSMG = false; WPTHOMP = true; wptext = ("thomp");
-				}
-				ImGui::EndGroup();
-				ImGui::SameLine();
-				ImGui::BeginGroup();
-				if (ImGui::Button((" 8x"), ImVec2(100, 20))) {
-					Mod8X = true; ModHOLO = false; ModHAND = false; scptext = ("8x");
-				}
-				if (ImGui::Button((" Hand"), ImVec2(100, 20))) {
-					ModHAND = true; Mod8X = false; ModHOLO = false; scptext = ("hand");
-				}
-				if (ImGui::Button((" Holo"), ImVec2(100, 20))) {
-					ModHOLO = true; Mod8X = false; ModHAND = false; scptext = ("holo");
-				}
-				if (ImGui::Button((" Silen"), ImVec2(100, 20))) {
-					ModSILEN = true; brltext = ("sus");
-				}
-				if (ImGui::Button((" MOD reset"), ImVec2(100, 20))) {
-					ModSILEN = false; ModHOLO = false; ModHAND = false; Mod8X = false; brltext = ("-"); scptext = ("-");
-				}
-				ImGui::EndGroup();
-				if (ImGui::Button((" reset"), ImVec2(100, 20))) {
-					ModSILEN = false; ModHOLO = false; ModHAND = false; Mod8X = false; brltext = ("-"); scptext = ("-"); wptext = ("-");
-					WPLR = false; WPMP5 = false; WPTHOMP = false;   WPAK = false; WPSMG = false;
-				}
-				ImGui::SameLine();
-				if (ImGui::Button(("exit"), ImVec2(100, 20))) {
-					exit(0);
-				}
-				ImGui::Text(wptext.c_str());
-				ImGui::SameLine();
-				ImGui::Text(scptext.c_str());
-				ImGui::SameLine();
-				ImGui::Text(brltext.c_str());
-			}
-			ImGui::End();
-		}
-		ImGui::EndFrame();
-		g_pd3dDevice->SetRenderState(D3DRS_ZENABLE, FALSE);
-		g_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
-		g_pd3dDevice->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
-		g_pd3dDevice->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, NULL, 1.0f, 0);
-		if (g_pd3dDevice->BeginScene() >= 0)
-		{
-			ImGui::Render();
-			ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
-			g_pd3dDevice->EndScene();
-		}
-		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-		{
-			ImGui::UpdatePlatformWindows();
-			ImGui::RenderPlatformWindowsDefault();
-		}
-		HRESULT result = g_pd3dDevice->Present(NULL, NULL, NULL, NULL);
-		if (result == D3DERR_DEVICELOST && g_pd3dDevice->TestCooperativeLevel() == D3DERR_DEVICENOTRESET)
-			ResetDevice();
-	}
-	ImGui_ImplDX9_Shutdown();
-	ImGui_ImplWin32_Shutdown();
-	ImGui::DestroyContext();
-	CleanupDeviceD3D();
-	::DestroyWindow(hwnd);
-	::UnregisterClass(wc.lpszClassName, wc.hInstance);
-	return 0;
+int main() {
+
+	const int SCREEN_WIDTH = 800;
+	const int SCREEN_HEIGHT = 600;
+    SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
+    CreateThread(0, 0, (LPTHREAD_START_ROUTINE)MainFunc, 0, 0, 0);
+    WNDCLASSEXW wc = { sizeof(WNDCLASSEXW), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandleW(NULL), NULL, NULL, NULL, NULL, L"Main", NULL };
+    ::RegisterClassExW(&wc);
+    HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"Main", WS_OVERLAPPEDWINDOW, 0, 0, 50, 50, NULL, NULL, wc.hInstance, NULL);
+    ::ShowWindow(::GetConsoleWindow(), SW_HIDE);
+    if (!CreateDeviceD3D(hwnd)) {
+        CleanupDeviceD3D();
+        ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
+        return 1;
+    }
+    ::ShowWindow(hwnd, SW_HIDE);
+    ::UpdateWindow(hwnd);
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    ImGui::StyleColorsDark();
+    ImGui_ImplWin32_Init(hwnd);
+    ImGui_ImplDX9_Init(g_pd3dDevice);
+
+    bool done = false;
+    while (!done) {
+        MSG msg;
+        while (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+            ::TranslateMessage(&msg);
+            ::DispatchMessage(&msg);
+            if (msg.message == WM_QUIT)
+                done = true;
+        }
+        if (done)
+            break;
+        ImGui_ImplDX9_NewFrame();
+        ImGui_ImplWin32_NewFrame();
+        ImGui::NewFrame();
+        {
+            ImGui::Begin(("Main"));
+            {
+                ImGui::BeginGroup();
+                ImGui::Text(("Sensitivity"));
+                ImGui::SliderFloat(("##Sensitivity"), &Sensitivity, 0.001, 1, ("%.2f"));
+                ImGui::Text(("FOV"));
+                ImGui::SliderInt(("##FOV"), &FOV, 65, 90);
+                ImGui::EndGroup();
+                ImGui::BeginGroup();
+                if (ImGui::Button((" AK"), ImVec2(100, 20))) {
+                    WPAK = true; WPLR = false; WPMP5 = false; WPSMG = false; WPTHOMP = false; wptext = ("ak");
+                }
+                if (ImGui::Button((" LR"), ImVec2(100, 20))) {
+                    WPAK = false; WPLR = true; WPMP5 = false; WPSMG = false; WPTHOMP = false; wptext = ("lr");
+                }
+                if (ImGui::Button((" MP5"), ImVec2(100, 20))) {
+                    WPAK = false; WPLR = false; WPMP5 = true; WPSMG = false; WPTHOMP = false; wptext = ("mp5");
+                }
+                if (ImGui::Button((" SMG"), ImVec2(100, 20))) {
+                    WPAK = false; WPLR = false; WPMP5 = false; WPSMG = true; WPTHOMP = false; wptext = ("smg");
+                }
+                if (ImGui::Button((" THOMP"), ImVec2(100, 20))) {
+                    WPAK = false; WPLR = false; WPMP5 = false; WPSMG = false; WPTHOMP = true; wptext = ("thomp");
+                }
+                ImGui::EndGroup();
+                ImGui::SameLine();
+                ImGui::BeginGroup();
+                if (ImGui::Button((" 8x"), ImVec2(100, 20))) {
+                    Mod8X = true; ModHOLO = false; ModHAND = false; scptext = ("8x");
+                }
+                if (ImGui::Button((" Hand"), ImVec2(100, 20))) {
+                    ModHAND = true; Mod8X = false; ModHOLO = false; scptext = ("hand");
+                }
+                if (ImGui::Button((" Holo"), ImVec2(100, 20))) {
+                    ModHOLO = true; Mod8X = false; ModHAND = false; scptext = ("holo");
+                }
+                if (ImGui::Button((" Silen"), ImVec2(100, 20))) {
+                    ModSILEN = true; brltext = ("sus");
+                }
+                if (ImGui::Button((" MOD reset"), ImVec2(100, 20))) {
+                    ModSILEN = false; ModHOLO = false; ModHAND = false; Mod8X = false; brltext = ("-"); scptext = ("-");
+                }
+                ImGui::EndGroup();
+                if (ImGui::Button((" reset"), ImVec2(100, 20))) {
+                    ModSILEN = false; ModHOLO = false; ModHAND = false; Mod8X = false; brltext = ("-"); scptext = ("-"); wptext = ("-");
+                    WPLR = false; WPMP5 = false; WPTHOMP = false;   WPAK = false; WPSMG = false;
+                }
+                ImGui::SameLine();
+                if (ImGui::Button(("exit"), ImVec2(100, 20))) {
+                    exit(0);
+                }
+                ImGui::Text(wptext.c_str());
+                ImGui::SameLine();
+                ImGui::Text(scptext.c_str());
+                ImGui::SameLine();
+                ImGui::Text(brltext.c_str());
+            }
+            ImGui::End();
+        }
+        ImGui::EndFrame();
+        ImGui::EndFrame();
+        g_pd3dDevice->SetRenderState(D3DRS_ZENABLE, FALSE);
+        g_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+        g_pd3dDevice->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
+		D3DRECT rect = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT}; // Asumiendo que SCREEN_WIDTH y SCREEN_HEIGHT son las dimensiones de tu ventana
+		g_pd3dDevice->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
+
+        if (g_pd3dDevice->BeginScene() >= 0) {
+            ImGui::Render();
+            ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
+            g_pd3dDevice->EndScene();
+        }
+        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+        }
+        HRESULT result = g_pd3dDevice->Present(NULL, NULL, NULL, NULL);
+        if (result == D3DERR_DEVICELOST && g_pd3dDevice->TestCooperativeLevel() == D3DERR_DEVICENOTRESET)
+            ResetDevice();
+    }
+    ImGui_ImplDX9_Shutdown();
+    ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
+    CleanupDeviceD3D();
+    ::DestroyWindow(hwnd);
+    ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
+    return 0;
 }
-bool CreateDeviceD3D(HWND hWnd)
-{
-	if ((g_pD3D = Direct3DCreate9(D3D_SDK_VERSION)) == NULL)
-		return false;
-	ZeroMemory(&g_d3dpp, sizeof(g_d3dpp));
-	g_d3dpp.Windowed = TRUE;
-	g_d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
-	g_d3dpp.BackBufferFormat = D3DFMT_UNKNOWN;
-	g_d3dpp.EnableAutoDepthStencil = TRUE;
-	g_d3dpp.AutoDepthStencilFormat = D3DFMT_D16;
-	g_d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
-	if (g_pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hWnd, D3DCREATE_HARDWARE_VERTEXPROCESSING, &g_d3dpp, &g_pd3dDevice) < 0)
-		return false;
-	return true;
+bool CreateDeviceD3D(HWND hWnd) {
+    if ((g_pD3D = Direct3DCreate9(D3D_SDK_VERSION)) == NULL)
+        return false;
+    ZeroMemory(&g_d3dpp, sizeof(g_d3dpp));
+    g_d3dpp.Windowed = TRUE;
+    g_d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
+    g_d3dpp.BackBufferFormat = D3DFMT_UNKNOWN;
+    g_d3dpp.EnableAutoDepthStencil = TRUE;
+    g_d3dpp.AutoDepthStencilFormat = D3DFMT_D16;
+    g_d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
+    if (g_pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hWnd, D3DCREATE_HARDWARE_VERTEXPROCESSING, &g_d3dpp, &g_pd3dDevice) < 0)
+        return false;
+    return true;
 }
-void CleanupDeviceD3D()
-{
-	if (g_pd3dDevice) { g_pd3dDevice->Release(); g_pd3dDevice = NULL; }
-	if (g_pD3D) { g_pD3D->Release(); g_pD3D = NULL; }
+void CleanupDeviceD3D() {
+    if (g_pd3dDevice) { g_pd3dDevice->Release(); g_pd3dDevice = NULL; }
+    if (g_pD3D) { g_pD3D->Release(); g_pD3D = NULL; }
 }
-void ResetDevice()
-{
-	ImGui_ImplDX9_InvalidateDeviceObjects();
-	HRESULT hr = g_pd3dDevice->Reset(&g_d3dpp);
-	if (hr == D3DERR_INVALIDCALL)
-		IM_ASSERT(0);
-	ImGui_ImplDX9_CreateDeviceObjects();
+void ResetDevice() {
+    ImGui_ImplDX9_InvalidateDeviceObjects();
+    HRESULT hr = g_pd3dDevice->Reset(&g_d3dpp);
+    if (hr == D3DERR_INVALIDCALL)
+        IM_ASSERT(0);
+    ImGui_ImplDX9_CreateDeviceObjects();
 }
 #ifndef WM_DPICHANGED
 #define WM_DPICHANGED 0x02E0
 #endif
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-	if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
-		return true;
-	switch (msg)
-	{
-	case WM_SIZE:
-		if (g_pd3dDevice != NULL && wParam != SIZE_MINIMIZED)
-		{
-			g_d3dpp.BackBufferWidth = LOWORD(lParam);
-			g_d3dpp.BackBufferHeight = HIWORD(lParam);
-			ResetDevice();
-		}
-		return 0;
-	case WM_SYSCOMMAND:
-		if ((wParam & 0xfff0) == SC_KEYMENU)
-			return 0;
-		break;
-	case WM_DESTROY:
-		::PostQuitMessage(0);
-		return 0;
-	case WM_DPICHANGED:
-		if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_DpiEnableScaleViewports)
-		{
-			const RECT* suggested_rect = (RECT*)lParam;
-			::SetWindowPos(hWnd, NULL, suggested_rect->left, suggested_rect->top, suggested_rect->right - suggested_rect->left, suggested_rect->bottom - suggested_rect->top, SWP_NOZORDER | SWP_NOACTIVATE);
-		}
-		break;
-	}
-	return ::DefWindowProc(hWnd, msg, wParam, lParam);
+LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
+        return true;
+    switch (msg) {
+    case WM_SIZE:
+        if (g_pd3dDevice != NULL && wParam != SIZE_MINIMIZED) {
+            g_d3dpp.BackBufferWidth = LOWORD(lParam);
+            g_d3dpp.BackBufferHeight = HIWORD(lParam);
+            ResetDevice();
+        }
+        return 0;
+    case WM_SYSCOMMAND:
+        if ((wParam & 0xfff0) == SC_KEYMENU)
+            return 0;
+        break;
+    case WM_DESTROY:
+        ::PostQuitMessage(0);
+        return 0;
+    case WM_DPICHANGED:
+        if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_DpiEnableScaleViewports) {
+            const RECT* suggested_rect = (RECT*)lParam;
+            ::SetWindowPos(hWnd, NULL, suggested_rect->left, suggested_rect->top, suggested_rect->right - suggested_rect->left, suggested_rect->bottom - suggested_rect->top, SWP_NOZORDER | SWP_NOACTIVATE);
+        }
+        break;
+    }
+    return ::DefWindowProc(hWnd, msg, wParam, lParam);
 }
